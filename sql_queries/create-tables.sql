@@ -16,11 +16,11 @@ create table hired_employees (
     id serial primary key,
     name varchar(100),
     datetime timestamp,
-    deparment_id integer,
+    department_id integer,
     job_id integer
 );
 
-COPY hired_employees(id, name, datetime, deparment_id, job_id)
+COPY hired_employees(id, name, datetime, department_id, job_id)
 FROM '/Users/alfonsolicir/_project/de-code-challenge/data_challenge_files/hired_employees.csv' DELIMITER ',' CSV HEADER;
 
 # NOTE: there are 56 rows with NULL values on key columns like name, department_id or job_id, these rows will be ignored on the results
