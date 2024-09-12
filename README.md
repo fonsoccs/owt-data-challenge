@@ -63,7 +63,12 @@ You need to explore the data that was inserted in the previous section. The stak
   - `file` (form-data): The CSV file to be uploaded.
 - **Response:**
   - `200 OK`: File upload successful.
-  - `400 Bad Request`: Error message indicating the issue.
+  - `450`: The provided file does not have the required name structure.
+  - `451`: An error ocurred accessing the uploaded file message indicating the issue.
+  - `452`: The columns of the provided file does not match the expected structure.
+  - `453`: Error inserting data for the requested entity. Review logs to see additional information.
+  - `454`: The requested entity does not exists.
+  
 
 ## Testing
 Instructions on how to run the tests. Pending.

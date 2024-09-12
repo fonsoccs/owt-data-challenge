@@ -75,7 +75,7 @@ async def post_upload_file(file: UploadFile, entity_name: str):
         entity = entity_config[entity_name]
     else:
         #return {"ERROR": "Entity not found"}
-        raise HTTPException(status_code=457, detail="Entity not found")
+        raise HTTPException(status_code=454, detail="Entity not found")
 
     file_pth = file.filename
 
