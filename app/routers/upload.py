@@ -3,7 +3,9 @@ import re
 from io import BytesIO
 from fastapi import APIRouter, UploadFile, File
 import psycopg2
+import psycopg2.extras 
 from app.config import entity_config, db_config
+
 
 router = APIRouter()
 
@@ -41,14 +43,19 @@ def process_data(data: pd.DataFrame, entity: dict):
     data.dropna(inplace=True)
 
     run_status = True
+    batch_size = 1000
+
     try:
-        for _, row in data.iterrows():
-            values = tuple(row[col] for col in columns)
-            insert_query = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
-            cursor.execute(insert_query, values)
+        for start in range(0, len(data), batch_size):
+            end = start + batch_size
+            batch = data.iloc[start:end]
+            values = [tuple(row[col] for col in columns) for _, row in batch.iterrows()]
+            print(f"Loading batch: {start} to {end}")
+            insert_query = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES %s"
+            psycopg2.extras.execute_values(cursor, insert_query, values)
     except Exception as e:
         print(f"Error: {e}")
-        print(f"Row: {row}")
+        #print(f"Batch values: {values}")
         run_status = False
     finally:
         # Commit the transaction and close the connection

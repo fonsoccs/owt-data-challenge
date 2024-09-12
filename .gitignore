@@ -166,3 +166,6 @@ cython_debug/
 
 # ignore data files
 .csv
+departments.csv
+hired_employees.csv
+jobs.csv
