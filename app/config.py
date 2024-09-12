@@ -19,3 +19,13 @@ entity_config = {
         "file_regex": r'^hired_employees\.csv$'
     },
 }
+
+db_config = {
+    "dbname": "owt_data_challenge",
+    "user": "postgres",
+    "password": "mysecretpassword",
+    "host": "0.0.0.0",
+    "port": "5433"
+}
+
+

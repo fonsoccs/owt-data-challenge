@@ -2,11 +2,12 @@ import pandas as pd
 import re
 from io import BytesIO
 from fastapi import APIRouter, UploadFile, File
-from app.config import entity_config
+import psycopg2
+from app.config import entity_config, db_config
 
 router = APIRouter()
 
-def process_data(data: pd.DataFrame, entity: str):
+def process_data(data: pd.DataFrame, entity: dict):
     """
     Take the given data and perform data insertion on the designed entity.
 
@@ -17,11 +18,38 @@ def process_data(data: pd.DataFrame, entity: str):
     Returns:
         None
     """
-    # process data
-    print(data.head())
-    print(entity)
-    # TODO: Implement logic for data insertion, improve documentation
-    pass
+
+    # Connect to PostgreSQL database
+    conn = psycopg2.connect(
+        dbname=db_config["dbname"],
+        user=db_config["user"],
+        password=db_config["password"],
+        host=db_config["host"],
+        port=db_config["port"]
+    )
+    cursor = conn.cursor()
+
+    # Example: Insert data into the corresponding table
+    table_name = entity["table_name"].lower()
+    columns = entity["columns"]
+
+    run_status = True
+    try:
+        for _, row in data.dropna(inplace=True).iterrows():
+            values = tuple(row[col] for col in columns)
+            insert_query = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
+            cursor.execute(insert_query, values)
+    except Exception as e:
+        print(f"Error: {e}")
+        print(f"Row: {row}")
+        run_status = False
+    finally:
+        # Commit the transaction and close the connection
+        conn.commit()
+        cursor.close()
+        conn.close()
+    
+    return run_status
 
 @router.post("/{entity_name}/uploadcsv")
 async def post_upload_file(file: UploadFile, entity_name: str):
@@ -39,28 +67,31 @@ async def post_upload_file(file: UploadFile, entity_name: str):
     if entity_name in entity_config:
         entity = entity_config[entity_name]
     else:
-        return {"error": "Entity not found"}
+        return {"ERROR": "Entity not found"}
 
     file_pth = file.filename
 
     # validate the file received
     if not re.match(entity['file_regex'], file_pth):
-        return {"error": f"The allowed file for entity {entity['filename']} is: {entity['filename']}"}
+        return {"ERROR": f"The allowed file for entity {entity['filename']} is: {entity['filename']}"}
 
     # prepare the expected columns to validate file structure
     expected_columns = entity['columns']
-    # print(expected_columns)
 
-    # read the file contents to validate the columns
-    with open(file_pth, "wb") as F:
-        contents = await file.read()
-        df = pd.read_csv(BytesIO(contents))
-
-    print(df.columns.tolist())
+    try: 
+        # read the file contents to validate the columns
+        with open(file_pth, "wb") as F:
+            contents = await file.read()
+            df = pd.read_csv(BytesIO(contents))
+    except Exception as e:
+        print(f"Error: {e}")
+        return {"ERROR": "Error accessing the uploaded file"}
+    
     if df.columns.tolist() != expected_columns:
-        return {"error": "Unexpected columns in the uploaded file"}
+        return {"ERROR": "Unexpected columns in the uploaded file"}
 
-    # execute data insertion
-    process_data(df, entity['table_name'])
-
+    # execute data loading
+    if process_data(df, entity) == False:
+        return {"ERROR": f"Data insertion for '{entity_name}' failed"}
+ 
     return {"message": "File upload successful"}
