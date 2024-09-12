@@ -88,10 +88,9 @@ async def post_upload_file(file: UploadFile, entity_name: str):
     expected_columns = entity['columns']
 
     try: 
-        # read the file contents to validate the columns
-        with open(file_pth, "wb") as F:
-            contents = await file.read()
-            df = pd.read_csv(BytesIO(contents))
+        # read the file contents to validate the columns and load the data
+        contents = await file.read()
+        df = pd.read_csv(BytesIO(contents))
     except Exception as e:
         print(f"Error: {e}")
         #return {"ERROR": "Error accessing the uploaded file"}
