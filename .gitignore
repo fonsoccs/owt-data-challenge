@@ -162,10 +162,7 @@ cython_debug/
 #.idea/
 
 # supplemental docs
-.pdf
+*.pdf
 
 # ignore data files
-.csv
-hired_employees.csv
-jobs.csv
-departments.csv
+*.csv
