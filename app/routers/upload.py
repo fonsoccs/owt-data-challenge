@@ -1,7 +1,7 @@
 import pandas as pd
 import re
 from io import BytesIO
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, HTTPException
 import psycopg2
 from app.config import entity_config, db_config
 
@@ -74,31 +74,35 @@ async def post_upload_file(file: UploadFile, entity_name: str):
     if entity_name in entity_config:
         entity = entity_config[entity_name]
     else:
-        return {"ERROR": "Entity not found"}
+        #return {"ERROR": "Entity not found"}
+        raise HTTPException(status_code=454, detail="Entity not found")
 
     file_pth = file.filename
 
     # validate the file received
     if not re.match(entity['file_regex'], file_pth):
-        return {"ERROR": f"The allowed file for entity {entity['filename']} is: {entity['filename']}"}
+        #return {"ERROR": f"The allowed file for entity {entity['filename']} is: {entity['filename']}"}
+        raise HTTPException(status_code=450, detail=f"The allowed file for entity {entity['filename']} is: {entity['filename']}")
 
     # prepare the expected columns to validate file structure
     expected_columns = entity['columns']
 
     try: 
-        # read the file contents to validate the columns
-        with open(file_pth, "wb") as F:
-            contents = await file.read()
-            df = pd.read_csv(BytesIO(contents))
+        # read the file contents to validate the columns and load the data
+        contents = await file.read()
+        df = pd.read_csv(BytesIO(contents))
     except Exception as e:
         print(f"Error: {e}")
-        return {"ERROR": "Error accessing the uploaded file"}
+        #return {"ERROR": "Error accessing the uploaded file"}
+        raise HTTPException(status_code=451, detail="Error accessing the uploaded file")
     
     if df.columns.tolist() != expected_columns:
-        return {"ERROR": "Unexpected columns in the uploaded file"}
+        #return {"ERROR": "Unexpected columns in the uploaded file"}
+        raise HTTPException(status_code=452, detail="Unexpected columns in the uploaded file")
 
     # execute data loading
     if process_data(df, entity) == False:
-        return {"ERROR": f"Data insertion for '{entity_name}' failed"}
+        #return {"ERROR": f"Data insertion for '{entity_name}' failed"}
+        raise HTTPException(status_code=453, detail=f"Data insertion for '{entity_name}' failed")
  
     return {"message": "File upload successful"}
