@@ -1,0 +1,1 @@
+CREATE DATABASE owt_data_challenge;
