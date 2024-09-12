@@ -23,7 +23,7 @@ entity_config = {
 db_config = {
     "dbname": "owt_data_challenge",
     "user": "postgres",
-    "password": "mysecretpassword",
+    "password": "",
     "host": "0.0.0.0",
     "port": "5433"
 }
