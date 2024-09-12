@@ -20,22 +20,29 @@ def process_data(data: pd.DataFrame, entity: dict):
     """
 
     # Connect to PostgreSQL database
-    conn = psycopg2.connect(
-        dbname=db_config["dbname"],
-        user=db_config["user"],
-        password=db_config["password"],
-        host=db_config["host"],
-        port=db_config["port"]
-    )
-    cursor = conn.cursor()
+    try:
+        conn = psycopg2.connect(
+            dbname=db_config["dbname"],
+            user=db_config["user"],
+            password=db_config["password"],
+            host=db_config["host"],
+            port=db_config["port"]
+        )
+        cursor = conn.cursor()
+    except Exception as e:
+        print(f"ERROR: {e}")
+        return False
 
     # Example: Insert data into the corresponding table
     table_name = entity["table_name"].lower()
     columns = entity["columns"]
 
+    #drop invalid rows
+    data.dropna(inplace=True)
+
     run_status = True
     try:
-        for _, row in data.dropna(inplace=True).iterrows():
+        for _, row in data.iterrows():
             values = tuple(row[col] for col in columns)
             insert_query = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
             cursor.execute(insert_query, values)
